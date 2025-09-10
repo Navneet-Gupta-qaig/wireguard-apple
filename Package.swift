@@ -4,14 +4,14 @@
 import PackageDescription
 
 let package = Package(
-    name: "WireGuardKit",
+    name: "QSleeve",
     platforms: [
         .macOS(.v12),
         .iOS(.v15),
         .tvOS(.v17)
     ],
     products: [
-        .library(name: "WireGuardKit", targets: ["WireGuardKit"])
+        .library(name: "QSleeve", targets: ["WireGuardKit"])
     ],
     dependencies: [],
     targets: [
