@@ -16,16 +16,16 @@ let package = Package(
     dependencies: [],
     targets: [
         .target(
-            name: "WireGuardKit",
+            name: "QSleeveKit",
             dependencies: ["WireGuardKitGo", "WireGuardKitC"]
         ),
         .target(
-            name: "WireGuardKitC",
+            name: "QSleeveKitC",
             dependencies: [],
             publicHeadersPath: "."
         ),
         .target(
-            name: "WireGuardKitGo",
+            name: "QSleeveKitGo",
             dependencies: [],
             exclude: [
                 "goruntime-boottime-over-monotonic.diff",
