@@ -11,13 +11,13 @@ let package = Package(
         .tvOS(.v17)
     ],
     products: [
-        .library(name: "QSleeve", targets: ["WireGuardKit"])
+        .library(name: "QSleeve", targets: ["QSleeveKit"])
     ],
     dependencies: [],
     targets: [
         .target(
             name: "QSleeveKit",
-            dependencies: ["WireGuardKitGo", "WireGuardKitC"]
+            dependencies: ["QSleeveKitGo", "QSleeveKitC"]
         ),
         .target(
             name: "QSleeveKitC",
