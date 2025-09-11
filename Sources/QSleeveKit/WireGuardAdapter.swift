@@ -9,7 +9,7 @@ import WireGuardKitGo
 import WireGuardKitC
 #endif
 
-public enum WireGuardAdapterError: Error {
+public enum QSleeveAdapterError: Error {
     /// Failure to locate tunnel file descriptor.
     case cannotLocateTunnelFileDescriptor
 
@@ -26,7 +26,7 @@ public enum WireGuardAdapterError: Error {
     case startWireGuardBackend(Int32)
 }
 
-/// Enum representing internal state of the `WireGuardAdapter`
+/// Enum representing internal state of the `QSleeveAdapter`
 private enum State {
     /// The tunnel is stopped
     case stopped
@@ -38,7 +38,7 @@ private enum State {
     case temporaryShutdown(_ settingsGenerator: PacketTunnelSettingsGenerator)
 }
 
-public class WireGuardAdapter {
+public class QSleeveAdapter {
     public typealias LogHandler = (WireGuardLogLevel, String) -> Void
 
     /// Network routes monitor.
@@ -50,8 +50,8 @@ public class WireGuardAdapter {
     /// Log handler closure.
     private let logHandler: LogHandler
 
-    /// Private queue used to synchronize access to `WireGuardAdapter` members.
-    private let workQueue = DispatchQueue(label: "WireGuardAdapterWorkQueue")
+    /// Private queue used to synchronize access to `QSleeveAdapter` members.
+    private let workQueue = DispatchQueue(label: "QSleeveAdapterWorkQueue")
 
     /// Adapter state.
     private var state: State = .stopped
@@ -174,7 +174,7 @@ public class WireGuardAdapter {
     /// - Parameters:
     ///   - tunnelConfiguration: tunnel configuration.
     ///   - completionHandler: completion handler.
-    public func start(tunnelConfiguration: TunnelConfiguration, completionHandler: @escaping (WireGuardAdapterError?) -> Void) {
+    public func start(tunnelConfiguration: TunnelConfiguration, completionHandler: @escaping (QSleeveAdapterError?) -> Void) {
         workQueue.async {
             guard case .stopped = self.state else {
                 completionHandler(.invalidState)
@@ -200,7 +200,7 @@ public class WireGuardAdapter {
                 )
                 self.networkMonitor = networkMonitor
                 completionHandler(nil)
-            } catch let error as WireGuardAdapterError {
+            } catch let error as QSleeveAdapterError {
                 networkMonitor.cancel()
                 completionHandler(error)
             } catch {
@@ -211,7 +211,7 @@ public class WireGuardAdapter {
 
     /// Stop the tunnel.
     /// - Parameter completionHandler: completion handler.
-    public func stop(completionHandler: @escaping (WireGuardAdapterError?) -> Void) {
+    public func stop(completionHandler: @escaping (QSleeveAdapterError?) -> Void) {
         workQueue.async {
             switch self.state {
             case .started(let handle, _):
@@ -238,7 +238,7 @@ public class WireGuardAdapter {
     /// - Parameters:
     ///   - tunnelConfiguration: tunnel configuration.
     ///   - completionHandler: completion handler.
-    public func update(tunnelConfiguration: TunnelConfiguration, completionHandler: @escaping (WireGuardAdapterError?) -> Void) {
+    public func update(tunnelConfiguration: TunnelConfiguration, completionHandler: @escaping (QSleeveAdapterError?) -> Void) {
         workQueue.async {
             if case .stopped = self.state {
                 completionHandler(.invalidState)
@@ -277,7 +277,7 @@ public class WireGuardAdapter {
                 }
 
                 completionHandler(nil)
-            } catch let error as WireGuardAdapterError {
+            } catch let error as QSleeveAdapterError {
                 completionHandler(error)
             } catch {
                 fatalError()
@@ -293,7 +293,7 @@ public class WireGuardAdapter {
         wgSetLogger(context) { context, logLevel, message in
             guard let context = context, let message = message else { return }
 
-            let unretainedSelf = Unmanaged<WireGuardAdapter>.fromOpaque(context)
+            let unretainedSelf = Unmanaged<QSleeveAdapter>.fromOpaque(context)
                 .takeUnretainedValue()
 
             let swiftString = String(cString: message).trimmingCharacters(in: .newlines)
@@ -309,7 +309,7 @@ public class WireGuardAdapter {
     ///
     /// - Parameters:
     ///   - networkSettings: an instance of type `NEPacketTunnelNetworkSettings`.
-    /// - Throws: an error of type `WireGuardAdapterError`.
+    /// - Throws: an error of type `QSleeveAdapterError`.
     /// - Returns: `PacketTunnelSettingsGenerator`.
     private func setNetworkSettings(_ networkSettings: NEPacketTunnelNetworkSettings) throws {
         var systemError: Error?
@@ -330,7 +330,7 @@ public class WireGuardAdapter {
 
         if condition.wait(until: Date().addingTimeInterval(setTunnelNetworkSettingsTimeout)) {
             if let systemError = systemError {
-                throw WireGuardAdapterError.setNetworkSettings(systemError)
+                throw QSleeveAdapterError.setNetworkSettings(systemError)
             }
         } else {
             self.logHandler(.error, "setTunnelNetworkSettings timed out after 5 seconds; proceeding anyway")
@@ -339,7 +339,7 @@ public class WireGuardAdapter {
 
     /// Resolve peers of the given tunnel configuration.
     /// - Parameter tunnelConfiguration: tunnel configuration.
-    /// - Throws: an error of type `WireGuardAdapterError`.
+    /// - Throws: an error of type `QSleeveAdapterError`.
     /// - Returns: The list of resolved endpoints.
     private func resolvePeers(for tunnelConfiguration: TunnelConfiguration) throws -> [Endpoint?] {
         let endpoints = tunnelConfiguration.peers.map { $0.endpoint }
@@ -353,7 +353,7 @@ public class WireGuardAdapter {
         }
         assert(endpoints.count == resolutionResults.count)
         guard resolutionErrors.isEmpty else {
-            throw WireGuardAdapterError.dnsResolution(resolutionErrors)
+            throw QSleeveAdapterError.dnsResolution(resolutionErrors)
         }
 
         let resolvedEndpoints = resolutionResults.map { result -> Endpoint? in
@@ -366,16 +366,16 @@ public class WireGuardAdapter {
 
     /// Start WireGuard backend.
     /// - Parameter wgConfig: WireGuard configuration
-    /// - Throws: an error of type `WireGuardAdapterError`
+    /// - Throws: an error of type `QSleeveAdapterError`
     /// - Returns: tunnel handle
     private func startWireGuardBackend(wgConfig: String) throws -> Int32 {
         guard let tunnelFileDescriptor = self.tunnelFileDescriptor else {
-            throw WireGuardAdapterError.cannotLocateTunnelFileDescriptor
+            throw QSleeveAdapterError.cannotLocateTunnelFileDescriptor
         }
 
         let handle = wgTurnOn(wgConfig, tunnelFileDescriptor)
         if handle < 0 {
-            throw WireGuardAdapterError.startWireGuardBackend(handle)
+            throw QSleeveAdapterError.startWireGuardBackend(handle)
         }
         #if os(iOS)
         wgDisableSomeRoamingForBrokenMobileSemantics(handle)
@@ -385,7 +385,7 @@ public class WireGuardAdapter {
 
     /// Resolves the hostnames in the given tunnel configuration and return settings generator.
     /// - Parameter tunnelConfiguration: an instance of type `TunnelConfiguration`.
-    /// - Throws: an error of type `WireGuardAdapterError`.
+    /// - Throws: an error of type `QSleeveAdapterError`.
     /// - Returns: an instance of type `PacketTunnelSettingsGenerator`.
     private func makeSettingsGenerator(with tunnelConfiguration: TunnelConfiguration) throws -> PacketTunnelSettingsGenerator {
         return PacketTunnelSettingsGenerator(
