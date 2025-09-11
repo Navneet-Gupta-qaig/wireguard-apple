@@ -11,10 +11,21 @@ let package = Package(
         .tvOS(.v17)
     ],
     products: [
-        .library(name: "QSleeve", targets: ["QSleeveKit"])
+        .library(name: "QSleeve", targets: ["QSleeveKit"]),
+        // Library for QSleeveKitC (optional dependency)
+                .library(
+                    name: "QSleeveKitC",
+                    type: .dynamic, // Optional: use .static if you prefer static linking
+                    targets: ["QSleeveKitC"]
+                ),
+                // Library for QSleeveKitGo (optional dependency)
+                .library(
+                    name: "QSleeveKitGo",
+                    type: .dynamic, // Optional: use .static if you prefer static linking
+                    targets: ["QSleeveKitGo"]
+                )
     ],
-    dependencies: [],
-    targets: [
+    dependencies: [],    targets: [
         .target(
             name: "QSleeveKit",
             dependencies: ["QSleeveKitGo", "QSleeveKitC"]
